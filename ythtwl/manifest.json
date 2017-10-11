@@ -1,0 +1,19 @@
+﻿{
+    "manifest_version": 2,
+
+    "name": "华通物流",
+    "version": "0.0.1",
+    "description": "烟台华通物流车辆监控系统扩展",
+    "icons": {
+        "16": "images/truck.png",
+        "48": "images/truckx48.png",
+        "128": "images/truckx128.png"
+    },
+    "browser_action": {
+        "default_icon": "images/truck.png"
+    },
+	"background": {
+		"scripts": ["js/tab.creator.js"]
+	},
+    "permissions": ["activeTab", "storage", "cookies", "tabs", "http://*/*", "https://*/*"]
+}
