@@ -2,7 +2,7 @@
 function isCookied() {
     var cache = new CookieCache();
     var cookie = cache.getDomains("www.zfbeidou.com");
-    if (cookie)
+    if (cookie && cookie.length > 0)
         return true;
     return false;
 }
