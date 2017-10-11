@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <title>烟台华通物流车辆监控(测试)</title>
     <link href="../css/bootstrap.min.css" rel="stylesheet">
+    <link href="../css/font-awesome.min.css" rel="stylesheet">
     <style>
         body {
             padding: 10px;
@@ -14,22 +15,24 @@
 <body>
     <div class="bs-example bs-example-tabs" data-example-id="togglable-tabs">
         <ul class="nav nav-tabs" id="myTabs" role="tablist">
-            <li role="presentation" class="active"><a href="#home" id="home-tab" role="tab" data-toggle="tab" aria-controls="home" aria-expanded="true">地图</a></li>
-            <li role="presentation"><a href="#profile" role="tab" id="profile-tab" data-toggle="tab" aria-controls="profile">统计</a></li>
+            <li role="presentation" class="active"><a href="#home" id="home-tab" role="tab" data-toggle="tab" aria-controls="home" aria-expanded="true"><i class="fa fa-globe" aria-hidden="true"></i> 车辆实况</a></li>
+            <li role="presentation"><a href="#profile" role="tab" id="profile-tab" data-toggle="tab" aria-controls="profile"><i class="fa fa-bar-chart" aria-hidden="true"></i> 运作统计</a></li>
         </ul>
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade in active" role="tabpanel" id="home" aria-labelledby="home-tab">
-                <p>Raw denim you probably haven't heard of them jean shorts Austin. Nesciunt tofu stumptown aliqua, retro synth master cleanse. Mustache cliche tempor, williamsburg carles vegan helvetica. Reprehenderit butcher retro keffiyeh dreamcatcher synth. Cosby sweater eu banh mi, qui irure terry richardson ex squid. Aliquip placeat salvia cillum iphone. Seitan aliquip quis cardigan american apparel, butcher voluptate nisi qui.</p>
+                <div id="container" style="width:800px; height:600px;"></div>
             </div>
             <div class="tab-pane fade" role="tabpanel" id="profile" aria-labelledby="profile-tab">
                 <p>Food truck fixie locavore, accusamus mcsweeney's marfa nulla single-origin coffee squid. Exercitation +1 labore velit, blog sartorial PBR leggings next level wes anderson artisan four loko farm-to-table craft beer twee. Qui photo booth letterpress, commodo enim craft beer mlkshk aliquip jean shorts ullamco ad vinyl cillum PBR. Homo nostrud organic, assumenda labore aesthetic magna delectus mollit. Keytar helvetica VHS salvia yr, vero magna velit sapiente labore stumptown. Vegan fanny pack odio cillum wes anderson 8-bit, sustainable jean shorts beard ut DIY ethical culpa terry richardson biodiesel. Art party scenester stumptown, tumblr butcher vero sint qui sapiente accusamus tattooed echo park.</p>
             </div>
         </div>
     </div>
-    <button type="button" class="btn btn-default" data-toggle="tooltip" data-placement="top" title="Tooltip on top">Tooltip on top</button>
+    <button type="button" class="btn btn-primary hidden" data-toggle="tooltip" data-placement="top" title="Tooltip on top"><i class="fa fa-truck" aria-hidden="true"></i> Tooltip on top</button>
     <script src="../js/jquery-3.2.1.slim.min.js"></script>
     <script src="../js/popper.min.js"></script>
     <script src="../js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="https://webapi.amap.com/maps?v=1.4.0&key=e198f39fc7cdcebf543c171a2565ecdf"></script>
+    <script src="../js/main.map.js"></script>
     <script src="../js/main.js"></script>
 </body>
 </html>
