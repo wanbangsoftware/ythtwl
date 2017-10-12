@@ -1,7 +1,21 @@
 ﻿
+var cache = new CookieCache();
+var timer = new Timer();
+
+function listener(info) {
+    cache.remove(info.cookie);
+    if (!info.removed) {
+        cache.add(info.cookie);
+    }
+    scheduleReloadCookieTable();
+}
+
+function startListening() {
+    chrome.cookies.onChanged.addListener(listener);
+}
+
 function isCookied() {
-    var cache = new CookieCache();
-    var cookie = cache.getDomains("www.zfbeidou.com");
+    var cookie = cache.getCookies("www.zfbeidou.com");
     if (cookie && cookie.length > 0)
         return true;
     return false;
@@ -9,11 +23,20 @@ function isCookied() {
 
 $(document).ready(function () {
 
-    $(".btn").text(isCookied() ? "点击开始" : "未登录").click(function () {
+    chrome.cookies.getAll({}, function (cookies) {
+        startListening();
+        start = new Date();
+        for (var i in cookies) {
+            cache.add(cookies[i]);
+        }
+        timer.reset();
+    });
+
+    $(".btn").click(function () {
         if (isCookied()) {
             document.location = "../html/main.html";
         } else {
-            alert("您还未登录北斗系统，请先登录之后再来。");
+            showDialog("提示", "您还未登录北斗系统，请先登录之后再来。");
         }
     });
 });

@@ -1,19 +1,20 @@
 ﻿{
-    "manifest_version": 2,
+  "manifest_version": 2,
 
-    "name": "华通物流",
-    "version": "0.0.1",
-    "description": "烟台华通物流车辆监控系统扩展",
-    "icons": {
-        "16": "images/truck.png",
-        "48": "images/truckx48.png",
-        "128": "images/truckx128.png"
-    },
-    "browser_action": {
-        "default_icon": "images/truck.png"
-    },
-	"background": {
-		"scripts": ["js/tab.creator.js"]
-	},
-    "permissions": ["activeTab", "storage", "cookies", "tabs", "http://*/*", "https://*/*"]
+  "name": "华通物流",
+  "version": "0.0.1",
+  "description": "烟台华通物流有限公司车辆监控系统插件",
+  "icons": {
+    "16": "images/truck.png",
+    "48": "images/truckx48.png",
+    "128": "images/truckx128.png"
+  },
+  "browser_action": {
+    "default_icon": "images/truck.png"
+  },
+  "background": {
+    "scripts": [ "js/tab.creator.js" ]
+  },
+  "content_security_policy": "script-src 'self' 'unsafe-eval' https://*.amap.com/; object-src 'self'",
+  "permissions": [ "cookies", "tabs", "http://*/*", "https://*/*" ]
 }

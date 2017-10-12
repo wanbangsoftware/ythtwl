@@ -1,6 +1,6 @@
 ﻿
 if (!chrome.cookies) {
-    //chrome.cookies = chrome.experimental.cookies;
+    chrome.cookies = chrome.experimental.cookies;
 }
 
 // Compares cookies for "key" (name, domain, etc.) equality, but not "value"
