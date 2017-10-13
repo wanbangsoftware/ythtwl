@@ -29,7 +29,7 @@ function loadingTrucks() {
             displayTrucksList(data[0]);
         },
         error: function (data) {
-            showDialog("提示", data.statusText);
+            showDialog("提示", data.responseText);
         }
     });
 }

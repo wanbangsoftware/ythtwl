@@ -16,8 +16,20 @@ function startListening() {
 
 function isCookied() {
     var cookie = cache.getCookies("www.zfbeidou.com");
-    if (cookie && cookie.length > 0)
-        return true;
+    if (typeof (cookie) === "undefined") {
+        return false;
+    }
+    if (cookie && cookie.length > 0) {
+        var userId = "";
+        for (var i in cookie) {
+            var ck = cookie[i];
+            if (ck.name == "UserId" && !isStringNull(ck.value)) {
+                userId = ck.value;
+                break;
+            }
+        }
+        return !isStringNull(userId);
+    }
     return false;
 }
 
