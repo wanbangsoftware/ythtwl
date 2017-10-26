@@ -3,6 +3,11 @@
 var trucks = new Array();
 var seekTrucks = new Array();
 var seekIndex = 0;
+var setting = {
+    distance: 50,
+    filter: "ignore",
+    stopping: 30
+};
 
 function initializeDatepicker() {
     if (isStringNull($("#statisticalDate").val())) {
@@ -79,7 +84,7 @@ function displayTrucksList(data) {
             if (truck.hasOwnProperty("attributes")) {
                 trucks.push(truck);
                 var info = truck.attributes;
-                var html = htmlTruck.replace(/%id%/g, truck.id.replace("l","")).replace("%index%", index)
+                var html = htmlTruck.replace(/%id%/g, truck.id.replace("l", "")).replace("%index%", index)
                     .replace("%license%", info.PlateNumber).replace("%online%", truck.online ? "在线" : "离线")
                     .replace("%speed%", info.Speed / 10).replace("%direct%", getDirect(info.Direction)).replace("%degree%", formatDirection(info.Direction))
                     .replace("%alarm%", "-").replace("%lon%", info.Lo / 1000000).replace("%lat%", info.La / 1000000).replace("%address%", "-");
@@ -98,6 +103,7 @@ var htmlStatistical = '<tr>' +
     '                      <td>%startTime%</td>' +
     '                      <td>%endTime%</td>' +
     '                      <td>%distence% km</td>' +
+    '                      <td>%dashboard% km</td>' +
     '                      <td></td>' +
     '                  </tr>';
 function getTruckTrace() {
@@ -114,24 +120,51 @@ function getTruckTrace() {
             if (null == data || data.length < 1) {
                 var html = htmlStatistical.replace("%index%", seekIndex + 1)
                     .replace("%license%", truck.attributes.PlateNumber).replace("%date%", date)
-                    .replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0");
+                    .replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0")
+                    .replace("%dashboard%", "0");
                 $("table tbody:eq(2)").append(html);
             } else {
                 var html = htmlStatistical.replace("%index%", seekIndex + 1)
                     .replace("%license%", truck.attributes.PlateNumber).replace("%date%", date);
                 //.replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0");
                 var latlng = null;
-                var distance = 0;
+                var distance = 0, dashboard = 0, lstKm = 0;
+                var started = false;
+                var endTime = "-";
                 for (var i = 0; i < data.length; i++) {
                     var r = data[i];
                     var lat = r.lat / 1000000, lng = r.lng / 1000000;
                     if (null == latlng) {
-                        latlng = new AMap.LngLat(lng, lat);
-                        html = html.replace("%startTime%", r.Time.substr(11));
+                        if (r.Speed > 0) {
+                            started = true;
+                            lstKm = r.Mileage;
+                            // 速度变化时才是开始
+                            latlng = new AMap.LngLat(lng, lat);
+                            html = html.replace("%startTime%", r.RecvTime.substr(11));
+                        }
                     } else {
                         var dis = latlng.distance([lng, lat]);
-                        if (dis < 50) {
+                        //distance += dis;
+                        if (r.Speed > 0) {
+                            // 车辆启动
+                            if (!started) {
+                                started = true;
+                                lstKm = r.Mileage;
+                            }
+                        } else {
+                            // 没有速度时
+                            if (started) {
+                                started = false;
+                                dashboard += (r.Mileage - lstKm);
+                                // 启动状态且此时速度为0则说明这时停车了
+                                endTime = r.RecvTime.substr(11);
+                            }
+                        }
+                        if (dis < setting.distance) {
                             // 移动距离没有变化，行程不累加
+                            if (setting.filter == "count") {
+                                distance += dis;
+                            }
                         } else {
                             distance += dis;
                             // 重置新的位置点
@@ -139,10 +172,14 @@ function getTruckTrace() {
                         }
                     }
                     if (i + 1 >= data.length) {
-                        html = html.replace("%endTime%", r.Time.substr(11));
+                        html = html.replace("%endTime%", endTime);
                     }
                 }
+                if (html.indexOf("%startTime%") >= 0) {
+                    html = html.replace("%startTime%", "-");
+                }
                 html = html.replace("%distence%", (distance / 1000).toFixed(2));
+                html = html.replace("%dashboard%", (dashboard / 10).toFixed(2));
                 $("table tbody:eq(2)").append(html);
             }
             // 继续查找下一个
@@ -156,10 +193,74 @@ function getTruckTrace() {
     }
 }
 
+var tableToExcel = (function () {
+    var uri = 'data:application/vnd.ms-excel;base64,'
+        , template = '<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40"><head><meta charset="UTF-8"><!--[if gte mso 9]><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet><x:Name>{worksheet}</x:Name><x:WorksheetOptions><x:DisplayGridlines/></x:WorksheetOptions></x:ExcelWorksheet></x:ExcelWorksheets></x:ExcelWorkbook></xml><![endif]--></head><body><table border="1">{table}</table></body></html>'
+        , base64 = function (s) { return window.btoa(unescape(encodeURIComponent(s))) }
+        , format = function (s, c) { return s.replace(/{(\w+)}/g, function (m, p) { return c[p]; }) };
+    return function (tableElement, workSheetName, fileName) {
+        if (!tableElement.nodeType) {
+            tableElement = document.getElementById(tableElement);
+        }
+        var ctx = {
+            worksheet: workSheetName || 'Worksheet',
+            table: tableElement.innerHTML
+        }
+
+        document.getElementById("downloadLink").href = uri + base64(format(template, ctx));
+        document.getElementById("downloadLink").download = fileName;
+        document.getElementById("downloadLink").click();
+
+    }
+})();
+
+function getSetting(name) {
+    return window.localStorage.getItem(name);
+}
+
+function saveSetting(name, value) {
+    window.localStorage.setItem(name, value);
+}
+
+function loadingLocalSettings() {
+    if (window.localStorage) {
+        var obj = getSetting("setting");
+        if (!obj || isStringNull(obj)) {
+            saveSetting("setting", JSON.stringify(setting));
+        } else {
+            setting = JSON.parse(obj);
+        }
+        // 移动距离限制
+        $("#settingDistance").val(setting.distance);
+        // 是否过滤移动距离小的记录
+        $("input[type='radio'][name='options'][value='" + setting.filter + "']").attr("checked", true).parent().addClass("active");
+        $("input[type='radio'][name='options'][value!='" + setting.filter + "']").attr("checked", false).parent().removeClass("active");
+        // 停车时限
+        $("#settingStopping").val(setting.stopping);
+    } else {
+        showDialog("提示", "浏览器不支持本地数据缓存。");
+    }
+}
+
 $(document).ready(function () {
     $('#home-tab').tab('show');
     //$('[data-toggle="tooltip"]').tooltip();
     initializeDatepicker();
+    loadingLocalSettings();
+
+    $("#settingSave").click(function () {
+        setting.distance = $("#settingDistance").val();
+        setting.filter = $("input[name='options']:checked").val();
+        setting.stopping = $("#settingStopping").val();
+        saveSetting("setting", JSON.stringify(setting));
+        showDialog("提示", "数据已保存，这些设置将会在下一分钟之后开始生效。");
+    });
+
+    $("#exportExcel").click(function () {
+        var date = $("#statisticalDate").val();
+        // 导出统计结果到excel
+        tableToExcel("tableStatistical", "运作统计", "统计" + date + $("#statisticalLicense").val() + ".xls");
+    });
 
     // loading trucks 71f55003c9a36b40c4a094908f11fb77
     if (trucks.length < 1) {
@@ -175,13 +276,16 @@ $(document).ready(function () {
         });
         if (seekTrucks.length > 0) {
             $("table tbody:eq(2)").html("");
+            // 有查询结果时可以导出
+            $("#exportExcel").attr("disabled", false);
             // 挨个查询并且显示统计结果
             seekIndex = 0;
             getTruckTrace();
         } else {
             showDialog("提示", "没有找到类似『" + license + "』的车辆。");
-            $("table tbody:eq(2)").html("<tr><td colspan=\"7\">没有找到类似『" + license + "』的车辆。</td></tr>");
+            $("table tbody:eq(2)").html("<tr><td colspan=\"8\">没有找到类似『" + license + "』的车辆。</td></tr>");
             $(this).attr("disabled", false);
+            $("#exportExcel").attr("disabled", true);
         }
     });
 });

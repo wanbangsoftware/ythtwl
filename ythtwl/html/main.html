@@ -57,17 +57,7 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td data-value="l57847" class="center">1</td>
-                            <td>57847</td>
-                            <td>鲁F64127</td>
-                            <td>在线</td>
-                            <td>43.0 km/h</td>
-                            <td>120°</td>
-                            <td>-</td>
-                            <td>121198064</td>
-                            <td>37555184</td>
-                            <td class="overflow">山东省烟台市福山区，上汽通用东岳汽车北251米；海滨假日花园西南743米；烟台金沙滩喜来登度假酒店西南927米；上海通用东岳动力总成北869米；采悦轩-中餐厅西南891米；</td>
-                            <td></td>
+                            <td colspan="11">车辆实时情况一览</td>
                         </tr>
                     </tbody>
                 </table>
@@ -92,9 +82,15 @@
                                 <span class="glyphicon glyphicon-search" aria-hidden="true"></span> 查询
                             </button>
                         </td>
+                        <td class="table_header1" style="border-left: 0px; padding-left: 10px;">
+                            <a id="downloadLink" style="display:none;"></a>
+                            <button type="button" class="btn btn-success" id="exportExcel" disabled="disabled">
+                                <img src="../images/excel_2013_24px.png" /> 导出到excel
+                            </button>
+                        </td>
                     </tr>
                 </table>
-                <table class="table table-bordered table-striped js-options-table js-options-table" style="table-layout: fixed;">
+                <table class="table table-bordered table-striped js-options-table js-options-table" style="table-layout: fixed;" id="tableStatistical">
                     <thead>
                         <tr>
                             <th class="center" style="width: 40px;">#</th>
@@ -102,19 +98,14 @@
                             <th style="width: 100px;">统计日期</th>
                             <th style="width: 120px;">开始时间</th>
                             <th style="width: 120px;">结束时间</th>
-                            <th style="width: 120px;">当日累计里程</th>
+                            <th style="width: 120px;">累计里程(GPS)</th>
+                            <th style="width: 150px;">累计里程(里程表)</th>
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr>
-                            <td data-value="l57847" class="center">1</td>
-                            <td>鲁F64127</td>
-                            <td>2017-10-12</td>
-                            <td>07:40:35</td>
-                            <td>15:24:30</td>
-                            <td>78 km</td>
-                            <td></td>
+                            <td colspan="8">查询指定日期内车辆的运作情况</td>
                         </tr>
                     </tbody>
                 </table>
@@ -126,9 +117,19 @@
                     <div class="panel-body">
                         <div class="input-group" style="width: 300px;">
                             <span class="input-group-addon">移动距离(米)：</span>
-                            <input type="text" class="form-control" aria-label="Amount (to the nearest dollar)" value="50">
+                            <input type="text" class="form-control" aria-label="移动距离(米)" id="settingDistance" value="50">
                             <span class="input-group-addon">米</span>
                         </div>
+                        <div style="margin-top: 10px; margin-bottom: 10px;"><strong>统计时是否过滤掉此范围内的点：</strong></div>
+                        <div class="btn-group" data-toggle="buttons">
+                            <label class="btn btn-info active">
+                                <input type="radio" name="options" id="option1" value="ignore" autocomplete="off"> 忽略（默认）
+                            </label>
+                            <label class="btn btn-info">
+                                <input type="radio" name="options" id="option2" value="count" autocomplete="off"> 累计
+                            </label>
+                        </div>
+                        <div style="margin-top: 5px;">设置在统计车辆运作时是否将移动距离小于此设置值的点累加到运作里程内(忽略时可能统计结果会稍微不同)</div>
                     </div>
                     <div class="panel-footer">以车辆两次定位之间的移动距离来计算，小于设置的值时即判断为停车。</div>
                 </div>
@@ -138,23 +139,13 @@
                     <div class="panel-body">
                         <div class="input-group" style="width: 300px;">
                             <span class="input-group-addon">停车时限(分)：</span>
-                            <input type="text" class="form-control" aria-label="Amount (to the nearest dollar)" value="30">
+                            <input type="text" class="form-control" aria-label="停车时限" id="settingStopping" value="30">
                             <span class="input-group-addon">分钟</span>
                         </div>
                     </div>
                     <div class="panel-footer">车辆停在同一个地方超过此时限被认为停车超时，会发送一个警告提醒给指定的人员。</div>
                 </div>
-
-                <div class="panel panel-default">
-                    <div class="panel-heading">
-                        <h3 class="panel-title">Panel title</h3>
-                    </div>
-                    <div class="panel-body">
-                        Panel content
-                    </div>
-                </div>
-
-                <button type="button" class="btn btn-primary" data-toggle="button" aria-pressed="false" autocomplete="off">
+                <button type="button" class="btn btn-primary" data-toggle="button" id="settingSave" aria-pressed="false" autocomplete="off">
                     保存(保存后立即生效)
                 </button>
             </div>
