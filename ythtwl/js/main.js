@@ -37,7 +37,6 @@ function syncLoading(method, httpUrl, data, successed, faled) {
         },
         error: function (data) {
             faled(data);
-            showDialog("提示", data.responseText);
         }
     });
 }
@@ -253,6 +252,7 @@ $(document).ready(function () {
         setting.filter = $("input[name='options']:checked").val();
         setting.stopping = $("#settingStopping").val();
         saveSetting("setting", JSON.stringify(setting));
+        //$("#settingSave").attr("disabled", true);
         showDialog("提示", "数据已保存，这些设置将会在下一分钟之后开始生效。");
     });
 
@@ -261,6 +261,19 @@ $(document).ready(function () {
         // 导出统计结果到excel
         tableToExcel("tableStatistical", "运作统计", "统计" + date + $("#statisticalLicense").val() + ".xls");
     });
+
+    //$("#setting input[type='text']").each(function () {
+    //    var elem = $(this);
+    //    // Save current value of element
+    //    elem.data('oldVal', elem.val());
+    //    elem.on("propertychange change click keyup input paste", function (event) {
+    //        if (elem.data('oldVal') != elem.val()) {
+    //            // Updated stored value
+    //            elem.data("oldVal", elem.val());
+    //            $("#settingSave").attr("disabled", false);
+    //        }
+    //    });
+    //});
 
     // loading trucks 71f55003c9a36b40c4a094908f11fb77
     if (trucks.length < 1) {
