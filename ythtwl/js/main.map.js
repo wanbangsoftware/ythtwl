@@ -37,8 +37,9 @@ function addMarker(lat, lng, license, direct) {
         position: [latlng.lng, latlng.lat],
         icon: "../images/truck_marker.png",
         angle: direct,
+        title: license,
         label: {
-            content: license, offset: new AMap.Pixel(20, 20)
+            content: license, offset: new AMap.Pixel(40, 20)
         }
     });
     marker.setMap(_amap_);

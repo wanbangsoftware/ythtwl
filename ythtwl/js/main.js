@@ -90,13 +90,15 @@ function displayTrucksList(data) {
                     truckIds += "," + truck.id.replace("l", "");
                 }
                 var info = truck.attributes;
+                // 保持初始经纬度位置
+                truck.pos = new AMap.LngLat(info.Lo / 1000000, info.La / 1000000);
                 var html = htmlTruck.replace(/%id%/g, truck.id.replace("l", "")).replace("%index%", index)
                     .replace("%license%", info.PlateNumber).replace("%online%", truck.online ? "在线" : "离线")
                     .replace("%speed%", info.Speed / 10).replace("%direct%", getDirect(info.Direction)).replace("%degree%", formatDirection(info.Direction))
-                    .replace("%alarm%", "-").replace("%lon%", info.Lo / 1000000).replace("%lat%", info.La / 1000000).replace("%address%", "-");
+                    .replace("%alarm%", "-").replace("%lon%", truck.pos.getLng()).replace("%lat%", truck.pos.getLat()).replace("%address%", "-");
                 $("table tbody:eq(0)").append(html);
 
-                addMarker(info.La / 1000000, info.Lo / 1000000, info.PlateNumber, info.Direction);
+                addMarker(truck.pos.getLat(), truck.pos.getLng(), info.PlateNumber, info.Direction);
             }
         });
         fitMapView();
@@ -267,16 +269,49 @@ function loadingRealTime() {
         if (data.hasOwnProperty("Vs") && data.Vs.length > 0) {
             clearMarkers();
             $.each(data.Vs, function (index, item) {
+                var pos = new AMap.LngLat(item.lng / 1000000, item.lat / 1000000);
                 var tr = $("#_" + item.Id);
                 if (null != tr) {
                     // 速度
                     $(tr).children("td:eq(4)").text((item.Speed / 10) + " km/h");
                     //<img src=\"../images/arrow_up_24px.png\" class=\"%direct%\" /> %degree%°
                     $(tr).children("td:eq(5)").html("<img src=\"../images/arrow_up_24px.png\" class=\"%direct%\" /> %degree%°".replace("%direct%", getDirect(item.Direction)).replace("%degree%", formatDirection(item.Direction)));
-                    $(tr).children("td:eq(7)").text(item.lng / 1000000);
-                    $(tr).children("td:eq(8)").text(item.lat / 1000000);
+                    $(tr).children("td:eq(7)").text(pos.getLng());
+                    $(tr).children("td:eq(8)").text(pos.getLat());
                 }
-                addMarker(item.lat / 1000000, item.lng / 1000000, $(tr).children("td:eq(2)").text(), item.Direction);
+                addMarker(pos.getLat(), pos.getLng(), $(tr).children("td:eq(2)").text(), item.Direction);
+                // 更新车辆的状态
+                var seek = $.grep(trucks, function (truck) {
+                    return truck.id == "l" + item.Id;
+                });
+                if (seek.length > 0) {
+                    var truck = seek[0];
+                    var distance = truck.pos.distance([pos.getLng(), pos.getLat()]);
+                    if (distance < setting.distance) {
+                        // 位置没有变化，且还未记录停留的标记时
+                        if (!truck.hasOwnProperty("stay") || isStringNull(truck.stay)) {
+                            // 记录位置没有变化的初始时间
+                            truck.stay = item.RecvTime;
+                        } else if (!truck.hasOwnProperty("stayReported") || !truck.stayReported) {
+                            // 已经开始停留时，查看是否已经汇报过停留警报，如果没有汇报，则记录时间差
+                            // 查看位置没有变化的时间间隔
+                            var time1 = new Date(Date.parse(truck.stay.replace(/-/g, "/"))).getTime() / 1000;
+                            var time2 = new Date(Date.parse(item.RecvTime.replace(/-/g, "/"))).getTime() / 1000;
+                            var seconds = time2 - time1;
+                            if (seconds / 60 >= setting.stopping) {
+                                // 如果停留时间超过预设的间隔时，发送一个警报
+                                truck.stayReported = true;
+                                sendNimMessage(truck.attributes.PlateNumber, pos.getLat(), pos.getLng(), truck.stay, seconds);
+                            }
+                        }
+                    } else {
+                        // 更新位置
+                        truck.pos = pos;
+                        // 清空位置没有变化的时间记录
+                        truck.stay = "";
+                        truck.stayReported = false;
+                    }
+                }
             });
         }
         //fitMapView();
