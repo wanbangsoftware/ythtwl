@@ -1,6 +1,7 @@
 // JavaScript source code
 
 var trucks = new Array();
+var truckIds = "";
 var seekTrucks = new Array();
 var seekIndex = 0;
 var setting = {
@@ -8,6 +9,7 @@ var setting = {
     filter: "ignore",
     stopping: 30
 };
+var realTimeInterval = 50000;
 
 function initializeDatepicker() {
     if (isStringNull($("#statisticalDate").val())) {
@@ -25,7 +27,7 @@ function syncLoading(method, httpUrl, data, successed, faled) {
     $.ajax({
         type: method,
         url: httpUrl,
-        async: false,
+        async: true,
         data: data,
         dataType: "json",
         beforeSend: function (xhr) {
@@ -63,7 +65,7 @@ function getDirect(value) {
     return isStringNull(css) ? "" : ("rotated-" + css);
 }
 
-var htmlTruck = '<tr>' +
+var htmlTruck = '<tr id="_%id%">' +
     '                <td data-value="%id%" class="center" >%index%</td >' +
     '                <td>%id%</td>' +
     '                <td>%license%</td>' +
@@ -82,14 +84,23 @@ function displayTrucksList(data) {
         $.each(data.children, function (index, truck) {
             if (truck.hasOwnProperty("attributes")) {
                 trucks.push(truck);
+                if (isStringNull(truckIds)) {
+                    truckIds = truck.id.replace("l", "");
+                } else {
+                    truckIds += "," + truck.id.replace("l", "");
+                }
                 var info = truck.attributes;
                 var html = htmlTruck.replace(/%id%/g, truck.id.replace("l", "")).replace("%index%", index)
                     .replace("%license%", info.PlateNumber).replace("%online%", truck.online ? "在线" : "离线")
                     .replace("%speed%", info.Speed / 10).replace("%direct%", getDirect(info.Direction)).replace("%degree%", formatDirection(info.Direction))
                     .replace("%alarm%", "-").replace("%lon%", info.Lo / 1000000).replace("%lat%", info.La / 1000000).replace("%address%", "-");
                 $("table tbody:eq(0)").append(html);
+
+                addMarker(info.La / 1000000, info.Lo / 1000000, info.PlateNumber, info.Direction);
             }
         });
+        fitMapView();
+        setTimeout(loadingRealTime, realTimeInterval);
     } else {
         $("table tbody:eq(0)").html("<tr><td colspan=\"11\">没有任何数据，造成的原因可能是数据拉取失败、没有已注册的车辆。</td></tr>");
     }
@@ -185,7 +196,8 @@ function getTruckTrace() {
             seekIndex++;
             getTruckTrace();
         }, function (data) {
-            showDialog("出错了", "查询失败");
+            showDialog("出错了", "查询失败，请稍候重试");
+            $("#statisticalButton").attr("disabled", false);
         });
     } else {
         $("#statisticalButton").attr("disabled", false);
@@ -239,6 +251,39 @@ function loadingLocalSettings() {
     } else {
         showDialog("提示", "浏览器不支持本地数据缓存。");
     }
+}
+
+function loadingRealTime() {
+    var time = (new Date()).pattern("yyyy-MM-dd hh:mm:ss");
+    var data = {};
+    data.VIds = truckIds;
+    data.LT_As = time;
+    data.LT_ALEs = time;
+    data.LT_DHs = "";
+    data.LT_MMs = "";
+    data.RIs = 3;
+    syncLoading("post", "http://www.zfbeidou.com/bds/monitor/getRI", data, function (data) {
+        // 实时车辆状态，更新车辆列表里的数值
+        if (data.hasOwnProperty("Vs") && data.Vs.length > 0) {
+            clearMarkers();
+            $.each(data.Vs, function (index, item) {
+                var tr = $("#_" + item.Id);
+                if (null != tr) {
+                    // 速度
+                    $(tr).children("td:eq(4)").text((item.Speed / 10) + " km/h");
+                    //<img src=\"../images/arrow_up_24px.png\" class=\"%direct%\" /> %degree%°
+                    $(tr).children("td:eq(5)").html("<img src=\"../images/arrow_up_24px.png\" class=\"%direct%\" /> %degree%°".replace("%direct%", getDirect(item.Direction)).replace("%degree%", formatDirection(item.Direction)));
+                    $(tr).children("td:eq(7)").text(item.lng / 1000000);
+                    $(tr).children("td:eq(8)").text(item.lat / 1000000);
+                }
+                addMarker(item.lat / 1000000, item.lng / 1000000, $(tr).children("td:eq(2)").text(), item.Direction);
+            });
+        }
+        //fitMapView();
+        setTimeout(loadingRealTime, realTimeInterval);
+    }, function (data) {
+        showDialog("出错了", "查询实时数据失败，请刷新页面重试");
+    });
 }
 
 $(document).ready(function () {

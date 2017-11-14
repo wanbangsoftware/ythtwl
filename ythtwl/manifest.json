@@ -16,5 +16,5 @@
     "scripts": [ "js/tab.creator.js" ]
   },
   "content_security_policy": "script-src 'self' 'unsafe-eval' https://*.amap.com/; object-src 'self'",
-  "permissions": [ "cookies", "tabs", "http://*/*", "https://*/*" ]
+  "permissions": [ "cookies", "tabs", "alarms", "http://*/*", "https://*/*" ]
 }
