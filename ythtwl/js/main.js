@@ -108,7 +108,7 @@ function displayTrucksList(data) {
     }
 }
 
-var htmlStatistical = '<tr>' +
+var htmlStatistical = '<tr style="cursor: pointer;" id="#%id%">' +
     '                      <td data-value="%id%" class="center">%index%</td>' +
     '                      <td>%license%</td>' +
     '                      <td>%date%</td>' +
@@ -130,13 +130,14 @@ function getTruckTrace() {
         data.PlateNumber = truck.attributes.PlateNumber;
         syncLoading("post", "http://www.zfbeidou.com/bds/historytrace/getTraceData/", data, function (data) {
             if (null == data || data.length < 1) {
-                var html = htmlStatistical.replace("%index%", seekIndex + 1)
+                var html = htmlStatistical.replace("%index%", seekIndex + 1).replace(/%id%/g, truck.id.replace("l", ""))
                     .replace("%license%", truck.attributes.PlateNumber).replace("%date%", date)
                     .replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0")
                     .replace("%dashboard%", "0");
                 $("table tbody:eq(2)").append(html);
             } else {
-                var html = htmlStatistical.replace("%index%", seekIndex + 1)
+                truck.trace = data;
+                var html = htmlStatistical.replace("%index%", seekIndex + 1).replace(/%id%/g, truck.id.replace("l", ""))
                     .replace("%license%", truck.attributes.PlateNumber).replace("%date%", date);
                 //.replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0");
                 var latlng = null;
@@ -295,8 +296,8 @@ function loadingRealTime() {
                         } else if (!truck.hasOwnProperty("stayReported") || !truck.stayReported) {
                             // 已经开始停留时，查看是否已经汇报过停留警报，如果没有汇报，则记录时间差
                             // 查看位置没有变化的时间间隔
-                            var time1 = new Date(Date.parse(truck.stay.replace(/-/g, "/"))).getTime() / 1000;
-                            var time2 = new Date(Date.parse(item.RecvTime.replace(/-/g, "/"))).getTime() / 1000;
+                            var time1 = getTimestamp(truck.stay);
+                            var time2 = getTimestamp(item.RecvTime);
                             var seconds = time2 - time1;
                             if (seconds / 60 >= setting.stopping) {
                                 // 如果停留时间超过预设的间隔时，发送一个警报
@@ -321,7 +322,43 @@ function loadingRealTime() {
     });
 }
 
+function getTimestamp(time) {
+    if (typeof time === "string") {
+        return new Date(Date.parse(time.replace(/-/g, "/"))).getTime() / 1000;
+    } else {
+        return (new Date(time).toLocaleString('chinese', { hour12: false }).replace(/年|月/g, "-").replace(/日/g, " ").replace(/[\/]/g, "-"));//.pattern("yyyy-MM-dd hh:mm:ss");
+    }
+}
+
+var chartArray = [];
+function getChartData(truck) {
+    var date = $("#statisticalDate").val();
+    var begin = getTimestamp(date + " 00:00:00");
+    var end = getTimestamp(date + " 23:59:59");
+    var worker = new Worker("traceWorker.js");
+    worker.onmessage = function (evt) {
+        chartArray = evt.data;
+    };
+    chartArray = [];
+    var timestamp, lastSpeed = 0.0;
+    for (var i = begin; i <= end; i++) {
+        timestamp = getTimestamp(i * 1000);
+        var seek = $.grep(truck.trace, function (item) {
+            return item.RecvTime == timestamp;
+        });
+        if (seek.length > 0) {
+            lastSpeed = seek[0].Speed / 10;
+        }
+        chartArray.push([i, lastSpeed]);
+    }
+}
+
 $(document).ready(function () {
+
+    timezoneJS.timezone.zoneFileBasePath = "../js/tz";
+    timezoneJS.timezone.defaultZoneFile = [];
+    timezoneJS.timezone.init({ async: false });
+
     $('#home-tab').tab('show');
     //$('[data-toggle="tooltip"]').tooltip();
     initializeDatepicker();
@@ -379,6 +416,47 @@ $(document).ready(function () {
             $("table tbody:eq(2)").html("<tr><td colspan=\"8\">没有找到类似『" + license + "』的车辆。</td></tr>");
             $(this).attr("disabled", false);
             $("#exportExcel").attr("disabled", true);
+        }
+    });
+
+    $("table tbody:eq(2)").on('click', 'tr', function () {
+        if ($(this).children("td").length < 2) { return; }
+        var id = $(this).attr("id").replace("#", "");
+        var seeks = $.grep(trucks, function (truck) { return truck.id.indexOf(id) >= 0; });
+        if (seeks.length > 0) {
+            $('.progress').css("display", "block");
+            $(".modal-title").text("【" + $(this).children("td:eq(1)").text() + "】运作情况一览");
+            $(".modal").modal('show');
+            //getChartData(seeks[0]);
+            var date = $("#statisticalDate").val();
+            var begin = getTimestamp(date + " 00:00:00");
+            var end = getTimestamp(date + " 23:59:59");
+            var worker = new Worker("../js/traceWorker.js");
+            worker.postMessage({ trace: seeks[0].trace, begin: begin, end: end });
+            worker.onmessage = function (evt) {
+                if (typeof evt.data === "number") {
+                    var per = evt.data / seeks[0].trace.length * 100;
+                    $('.progress-bar').html(parseInt(per) + "%").css('width', per + '%').attr('aria-valuenow', per);
+                    $(".badge").text(parseInt(per) + "%");
+                } else {
+                    $('.progress').css("display", "none");
+                    var options = {
+                        xaxis: { mode: "time" },
+                        yaxes: {
+                            show: false,
+                            min: 0
+                        },
+                        legend: { position: "sw" },
+                        series: {
+                            lines: { show: true }
+                        }
+                    };
+                    var data = [{ data: evt.data}];
+                    $.plot("#placeholder", data, options);
+                }
+            };
+        } else {
+
         }
     });
 });
