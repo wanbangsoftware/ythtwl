@@ -425,6 +425,7 @@ $(document).ready(function () {
         var seeks = $.grep(trucks, function (truck) { return truck.id.indexOf(id) >= 0; });
         if (seeks.length > 0) {
             $('.progress').css("display", "block");
+            $("#badge").removeClass("hide");
             $(".modal-title").text("【" + $(this).children("td:eq(1)").text() + "】运作情况一览");
             $(".modal").modal('show');
             //getChartData(seeks[0]);
@@ -435,13 +436,19 @@ $(document).ready(function () {
             worker.postMessage({ trace: seeks[0].trace, begin: begin, end: end });
             worker.onmessage = function (evt) {
                 if (typeof evt.data === "number") {
-                    var per = evt.data / seeks[0].trace.length * 100;
-                    $('.progress-bar').html(parseInt(per) + "%").css('width', per + '%').attr('aria-valuenow', per);
+                    var per = evt.data / 86400 * 100;
+                    $('.progress-bar').html(parseInt(per) + "%").css('width', parseInt(per) + '%').attr('aria-valuenow', per);
                     $(".badge").text(parseInt(per) + "%");
                 } else {
                     $('.progress').css("display", "none");
+                    $("#badge").addClass("hide");
                     var options = {
-                        xaxis: { mode: "time" },
+                        xaxis: {
+                            alignTicksWithAxis: 1,
+                            tickFormatter: function (value, axis) {
+                                return getTimestamp(value * 1000).substr(11, 5);
+                            }
+                        },
                         yaxes: {
                             show: false,
                             min: 0
