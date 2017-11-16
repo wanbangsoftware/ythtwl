@@ -24,6 +24,14 @@
             overflow: hidden;
             text-overflow: ellipsis;
         }
+
+        .name {
+            width: 80px;
+        }
+
+        .phone {
+            width: 100px;
+        }
     </style>
 </head>
 <body>
@@ -32,8 +40,8 @@
             <li role="presentation" class="active"><a href="#liveSence" id="liveSence-tab" role="tab" data-toggle="tab" aria-controls="liveSence" aria-expanded="true"><i class="fa fa-globe" aria-hidden="true"></i> 车辆实况</a></li>
             <li role="presentation"><a href="#trucks" role="tab" id="trucks-tab" data-toggle="tab" aria-controls="trucks"><i class="fa fa-truck" aria-hidden="true"></i> 车辆列表</a></li>
             <li role="presentation"><a href="#statistical" role="tab" id="statistical-tab" data-toggle="tab" aria-controls="statistical"><i class="fa fa-bar-chart" aria-hidden="true"></i> 运作统计</a></li>
+            <li role="presentation"><a href="#drivers" role="tab" id="drivers-tab" data-toggle="tab" aria-controls="drivers"><span class="glyphicon glyphicon-user" aria-hidden="true"></span> 驾驶员信息</a></li>
             <li role="presentation"><a href="#setting" role="tab" id="setting-tab" data-toggle="tab" aria-controls="setting"><span class="glyphicon glyphicon-cog" aria-hidden="true"></span> 设置</a></li>
-            <li role="presentation"><a href="#testing" role="tab" id="testing-tab" data-toggle="tab" aria-controls="testing">测试</a></li>
         </ul>
         <div class="tab-content" id="myTabContent">
             <div class="tab-pane fade in active" role="tabpanel" id="liveSence" aria-labelledby="liveSence-tab">
@@ -99,6 +107,7 @@
                             <th style="width: 100px;">统计日期</th>
                             <th style="width: 120px;">开始时间</th>
                             <th style="width: 120px;">结束时间</th>
+                            <th class="center" style="width: 40px;">干活</th>
                             <th style="width: 120px;">累计里程(GPS)</th>
                             <th style="width: 150px;">累计里程(里程表)</th>
                             <th></th>
@@ -106,7 +115,28 @@
                     </thead>
                     <tbody>
                         <tr>
-                            <td colspan="8">查询指定日期内车辆的运作情况</td>
+                            <td colspan="9">查询指定日期内车辆的运作情况</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="tab-pane fade" role="tabpanel" id="drivers" aria-labelledby="drivers-tab" style="padding-top: 10px;">
+                <button type="button" class="btn btn-primary hidden" data-toggle="tooltip" data-placement="top" id="nimTesting" title="Tooltip on top"><i class="fa fa-truck" aria-hidden="true"></i> 测试发送消息</button>
+                <table class="table table-bordered table-striped js-options-table js-options-table" id="tableDrivers" style="table-layout: fixed;">
+                    <thead>
+                        <tr>
+                            <th class="center" style="width: 40px;">#</th>
+                            <th style="width: 100px;">车牌</th>
+                            <th style="width: 110px;">驾驶员姓名1</th>
+                            <th style="width: 150px;">驾驶员电话1</th>
+                            <th style="width: 110px;">驾驶员姓名2</th>
+                            <th style="width: 150px;">驾驶员电话2</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="7">找不到任何车辆信息</td>
                         </tr>
                     </tbody>
                 </table>
@@ -150,9 +180,6 @@
                     保存(保存后立即生效)
                 </button>
             </div>
-            <div class="tab-pane fade" role="tabpanel" id="testing" aria-labelledby="testing-tab">
-                <button type="button" class="btn btn-primary" data-toggle="tooltip" data-placement="top" id="nimTesting" title="Tooltip on top"><i class="fa fa-truck" aria-hidden="true"></i> 测试发送消息</button>
-            </div>
         </div>
     </div>
     <!-- Modal -->
@@ -194,7 +221,7 @@
     <script src="../js/jt808.js"></script>
     <script src="../js/sha1.min.js"></script>
     <script src="../js/md5.min.js"></script>
-    <script src="../js/nim.controls.js"></script>
+    <script charset="gb2312" language="javascript" src="../js/nim.controls.js"></script>
     <script src="../js/date.js"></script>
     <script src="../js/jquery.flot.js"></script>
     <script charset="gb2312" language="javascript" src="../js/traceWorker.js"></script>

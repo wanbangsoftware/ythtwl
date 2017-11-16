@@ -4,10 +4,12 @@ var trucks = new Array();
 var truckIds = "";
 var seekTrucks = new Array();
 var seekIndex = 0;
+var settingName = "setting";
 var setting = {
     distance: 50,
     filter: "ignore",
-    stopping: 30
+    stopping: 30,
+    drivers: new Array()
 };
 var realTimeInterval = 50000;
 
@@ -78,9 +80,19 @@ var htmlTruck = '<tr id="_%id%">' +
     '                <td class="overflow">%address%</td>' +
     '                <td></td>' +
     '            </tr >';
+var htmlDirver = '<tr id="d%id%">' +
+    '                <td class="center" style= "vertical-align: middle;" >%index%</td >' +
+    '                <td style="vertical-align: middle;">%license%</td>' +
+    '                <td><input type="text" class="name" maxlength="4" placeholder="姓名1" value="%name1%" /></td>' +
+    '                <td><input type="text" class="phone" maxlength="11" placeholder="电话1" value="%phone1%" /></td>' +
+    '                <td><input type="text" class="name" maxlength="4" placeholder="姓名2" value="%name2%" /></td>' +
+    '                <td><input type="text" class="phone" maxlength="11" placeholder="电话2" value="%phone2%" /></td>' +
+    '                <td></td>' +
+    '             </tr >';
 function displayTrucksList(data) {
     if (data.hasOwnProperty("children") && data.children.length > 0) {
         $("table tbody:eq(0)").html("");
+        $("table tbody:eq(3)").html("");
         $.each(data.children, function (index, truck) {
             if (truck.hasOwnProperty("attributes")) {
                 trucks.push(truck);
@@ -90,17 +102,38 @@ function displayTrucksList(data) {
                     truckIds += "," + truck.id.replace("l", "");
                 }
                 var info = truck.attributes;
+                var tid = truck.id.replace("l", "");
                 // 保持初始经纬度位置
                 truck.pos = new AMap.LngLat(info.Lo / 1000000, info.La / 1000000);
-                var html = htmlTruck.replace(/%id%/g, truck.id.replace("l", "")).replace("%index%", index)
+                var html = htmlTruck.replace(/%id%/g, tid).replace("%index%", index)
                     .replace("%license%", info.PlateNumber).replace("%online%", truck.online ? "在线" : "离线")
                     .replace("%speed%", info.Speed / 10).replace("%direct%", getDirect(info.Direction)).replace("%degree%", formatDirection(info.Direction))
                     .replace("%alarm%", "-").replace("%lon%", truck.pos.getLng()).replace("%lat%", truck.pos.getLat()).replace("%address%", "-");
                 $("table tbody:eq(0)").append(html);
 
                 addMarker(truck.pos.getLat(), truck.pos.getLng(), info.PlateNumber, info.Direction);
+
+                // 匹配司机信息
+                html = htmlDirver.replace(/%id%/g, tid).replace("%index%", index).replace("%license%", info.PlateNumber);
+                var drivers = setting.hasOwnProperty("drivers") ? $.grep(setting.drivers, function (driver) {
+                    return driver.truckId == tid;
+                }) : null;
+                if (null != drivers && drivers.length > 0) {
+                    html = html.replace("%name1%", drivers[0].name1).replace("%phone1%", drivers[0].phone1)
+                        .replace("%name2%", drivers[0].name2).replace("%phone2%", drivers[0].phone2);
+                } else {
+                    html = html.replace("%name1%", "").replace("%phone1%", "").replace("%name2%", "").replace("%phone2%", "");
+                    // 设置中添加一个新纪录
+                    if (!setting.hasOwnProperty("drivers")) {
+                        setting.drivers = [];
+                    }
+                    setting.drivers.push({ truckId: tid, license: info.PlateNumber, name1: "", phone1: "", name2: "", phone2: "" });
+                }
+                $("table tbody:eq(3)").append(html);
             }
         });
+        // 保存设置记录
+        saveSetting(settingName, JSON.stringify(setting));
         fitMapView();
         setTimeout(loadingRealTime, realTimeInterval);
     } else {
@@ -114,6 +147,7 @@ var htmlStatistical = '<tr style="cursor: pointer;" id="#%id%">' +
     '                      <td>%date%</td>' +
     '                      <td>%startTime%</td>' +
     '                      <td>%endTime%</td>' +
+    '                      <td class="center">%activity%</td>' +
     '                      <td>%distence% km</td>' +
     '                      <td>%dashboard% km</td>' +
     '                      <td></td>' +
@@ -133,15 +167,20 @@ function getTruckTrace() {
                 var html = htmlStatistical.replace("%index%", seekIndex + 1).replace(/%id%/g, truck.id.replace("l", ""))
                     .replace("%license%", truck.attributes.PlateNumber).replace("%date%", date)
                     .replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0")
-                    .replace("%dashboard%", "0");
+                    .replace("%dashboard%", "0").replace("%activity%", "0");
                 $("table tbody:eq(2)").append(html);
             } else {
                 truck.trace = data;
+                // 当天第一次启动时的位置，以此来判断当天干活来回了几趟
+                var bPos = null;
+                // 当天第一次启动的时间戳
+                var bTimestamp = 0;
+                var cycled = false;
                 var html = htmlStatistical.replace("%index%", seekIndex + 1).replace(/%id%/g, truck.id.replace("l", ""))
                     .replace("%license%", truck.attributes.PlateNumber).replace("%date%", date);
                 //.replace("%startTime%", "-").replace("%endTime%", "-").replace("%distence%", "0");
                 var latlng = null;
-                var distance = 0, dashboard = 0, lstKm = 0;
+                var distance = 0, dashboard = 0, lstKm = 0, activity = 0;
                 var started = false;
                 var endTime = "-";
                 for (var i = 0; i < data.length; i++) {
@@ -153,6 +192,11 @@ function getTruckTrace() {
                             lstKm = r.Mileage;
                             // 速度变化时才是开始
                             latlng = new AMap.LngLat(lng, lat);
+                            if (null == bPos) {
+                                bPos = new AMap.LngLat(lng, lat);
+                                cycled = false;
+                                bTimestamp = getTimestamp(r.RecvTime);
+                            }
                             html = html.replace("%startTime%", r.RecvTime.substr(11));
                         }
                     } else {
@@ -163,6 +207,11 @@ function getTruckTrace() {
                             if (!started) {
                                 started = true;
                                 lstKm = r.Mileage;
+                                if (null == bPos) {
+                                    bPos = new AMap.LngLat(lng, lat);
+                                    bTimestamp = getTimestamp(r.RecvTime);
+                                    cycled = false;
+                                }
                             }
                         } else {
                             // 没有速度时
@@ -184,6 +233,27 @@ function getTruckTrace() {
                             latlng = new AMap.LngLat(lng, lat);
                         }
                     }
+                    if (null != bPos) {
+                        // 当前第一次启动过了，则判断后续的定位信息是否在第一次启动的点附近
+                        thisTimestamp = getTimestamp(r.RecvTime);
+                        if (thisTimestamp - bTimestamp >= 20 * 60) {
+                            // 启动时间超过20分钟之后开始统计来回趟数
+                            var bDis = bPos.distance([lng, lat]);
+                            if (bDis <= 1000) {
+                                // 返回到当天第一次启动时位置的1km范围内说明出去干活完成了一趟回来了
+                                if (!cycled) {
+                                    cycled = true;
+                                    // 干活往返趟数+1
+                                    activity += 1;
+                                    // 重置启动时间为当前时间
+                                    bTimestamp = thisTimestamp;
+                                }
+                            } else {
+                                // 又出去干活了
+                                cycled = false;
+                            }
+                        }
+                    }
                     if (i + 1 >= data.length) {
                         html = html.replace("%endTime%", endTime);
                     }
@@ -191,6 +261,7 @@ function getTruckTrace() {
                 if (html.indexOf("%startTime%") >= 0) {
                     html = html.replace("%startTime%", "-");
                 }
+                html = html.replace("%activity%", activity);
                 html = html.replace("%distence%", (distance / 1000).toFixed(2));
                 html = html.replace("%dashboard%", (dashboard / 10).toFixed(2));
                 $("table tbody:eq(2)").append(html);
@@ -238,9 +309,9 @@ function saveSetting(name, value) {
 
 function loadingLocalSettings() {
     if (window.localStorage) {
-        var obj = getSetting("setting");
+        var obj = getSetting(settingName);
         if (!obj || isStringNull(obj)) {
-            saveSetting("setting", JSON.stringify(setting));
+            saveSetting(settingName, JSON.stringify(setting));
         } else {
             setting = JSON.parse(obj);
         }
@@ -302,7 +373,12 @@ function loadingRealTime() {
                             if (seconds / 60 >= setting.stopping) {
                                 // 如果停留时间超过预设的间隔时，发送一个警报
                                 truck.stayReported = true;
-                                sendNimMessage(truck.attributes.PlateNumber, pos.getLat(), pos.getLng(), truck.stay, seconds);
+                                var planteNum = truck.attributes.PlateNumber;
+                                var sets = $.grep(setting.drivers, function (drver) {
+                                    return drver.license == planteNum;
+                                });
+                                var drv = null != sets && sets.length > 0 ? sets[0] : null;
+                                sendNimMessage(planteNum, pos.getLat(), pos.getLng(), truck.stay, seconds, drv);
                             }
                         }
                     } else {
@@ -464,6 +540,23 @@ $(document).ready(function () {
             };
         } else {
 
+        }
+    });
+
+    $("table tbody:eq(3)").on('change paste keyup', 'input', function () {
+        var tr = $(this).parent().parent();
+        // 文本框输入事件，保存司机的信息
+        var id = $(tr).attr("id").replace("d", "");
+        var drivers = $.grep(setting.drivers, function (driver) {
+            return driver.truckId == id;
+        });
+        if (null != drivers && drivers.length > 0) {
+            drivers[0].name1 = $(tr).children("td:eq(2)").find("input").val();
+            drivers[0].phone1 = $(tr).children("td:eq(3)").find("input").val();
+            drivers[0].name2 = $(tr).children("td:eq(4)").find("input").val();
+            drivers[0].phone2 = $(tr).children("td:eq(5)").find("input").val();
+            // 保存设置记录
+            saveSetting(settingName, JSON.stringify(setting));
         }
     });
 });
