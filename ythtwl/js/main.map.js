@@ -1,6 +1,7 @@
 // JavaScript source code
 var _amap_;
 var _amap_markers_ = [];
+var markerSize = 50;
 $(document).ready(function () {
     var width = $(window).width() - 20;
     $("#container").width(width);
@@ -12,7 +13,7 @@ $(document).ready(function () {
         //center: [116.39, 39.9]
     });
 
-    AMap.plugin(['AMap.ToolBar', 'AMap.Scale', 'AMap.OverView'], function () {
+    AMap.plugin(['AMap.ToolBar', 'AMap.Scale', 'AMap.OverView', 'AMap.MapType'], function () {
 
         _amap_.addControl(new AMap.ToolBar());
 
@@ -21,6 +22,8 @@ $(document).ready(function () {
         //_amap_.addControl(new AMap.OverView({ isOpen: true }));
 
         //_amap_.addControl(new BasicControl.LayerSwitcher({ position: 'rt' }));
+        //地图类型切换  
+        _amap_.addControl(new AMap.MapType({ defaultType: 0, showTraffic: false, showRoad: true }));
     });
 });
 
@@ -31,19 +34,26 @@ function clearMarkers() {
 }
 
 // 添加标记
-function addMarker(lat, lng, license, direct) {
+function addMarker(lat, lng, license, direct, icon) {
     var latlng = GPS.gcj_encrypt(lat, lng);
     var marker = new AMap.Marker({
         position: [latlng.lng, latlng.lat],
-        icon: "../images/truck_marker.png",
+        icon: icon,//"../images/truck_marker.png",
         angle: direct,
-        title: license,
-        label: {
-            content: license, offset: new AMap.Pixel(40, 20)
-        }
+        offset: new AMap.Pixel(-25, -25),
+        title: license
     });
     marker.setMap(_amap_);
     _amap_markers_.push(marker);
+
+    // 车牌号
+    var label = new AMap.Marker({
+        position: [latlng.lng, latlng.lat],
+        content: "<div class ='license'>" + license + "</div>",
+        offset: new AMap.Pixel(10, -11)
+    });
+    label.setMap(_amap_);
+    _amap_markers_.push(label);
 }
 
 function fitMapView() {

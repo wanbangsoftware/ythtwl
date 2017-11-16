@@ -25,15 +25,22 @@ onmessage = function (evt) {
     var begin = data.begin, end = data.end;
     var trace = data.trace;
     var arr = [];
-    var timestamp, lastSpeed = 0.0, cnt = 0;
+    var timestamp, timestampNext;
     for (var i = begin; i <= end; i++) {
-        timestamp = getTimestamp(i * 1000);
-        var seek = getTrace(timestamp, trace);
-        if (null != seek) {
-            lastSpeed = seek.Speed / 10;
+        arr.push({ x: i, y: 0.0 });
+    }
+    for (var i = 0; i < trace.length; i++) {
+        timestamp = getTimestamp(trace[i].RecvTime);
+        if (i + 1 < trace.length) {
+            timestampNext = getTimestamp(trace[i + 1].RecvTime);
+        } else {
+            timestampNext = timestamp;
         }
-        arr.push([i, lastSpeed]);
-        postMessage(++cnt);
+        // Ìî³ä³µËÙ
+        for (var j = timestamp; j < timestampNext; j++) {
+            arr[j - begin].y = trace[i].Speed / 10;
+        }
+        postMessage(i + 1);
     }
     postMessage(arr);
 };

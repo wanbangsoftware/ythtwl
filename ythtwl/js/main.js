@@ -67,6 +67,19 @@ function getDirect(value) {
     return isStringNull(css) ? "" : ("rotated-" + css);
 }
 
+function getMarkerIcon(alarm, alarm2, lossed, speed) {
+    var path = "../images/truck_marker_";
+    if ((null != alarm && alarm != 0) || (null != alarm2 && alarm2 != 0)) {
+        path += "r";
+    } else if (lossed <= 180) {
+        path += (speed > 0 ? "g" : "b");
+    } else {
+        path += "y";
+    }
+    path += ".png";
+    return path;
+}
+
 var htmlTruck = '<tr id="_%id%">' +
     '                <td data-value="%id%" class="center" >%index%</td >' +
     '                <td>%id%</td>' +
@@ -110,8 +123,8 @@ function displayTrucksList(data) {
                     .replace("%speed%", info.Speed / 10).replace("%direct%", getDirect(info.Direction)).replace("%degree%", formatDirection(info.Direction))
                     .replace("%alarm%", "-").replace("%lon%", truck.pos.getLng()).replace("%lat%", truck.pos.getLat()).replace("%address%", "-");
                 $("table tbody:eq(0)").append(html);
-
-                addMarker(truck.pos.getLat(), truck.pos.getLng(), info.PlateNumber, info.Direction);
+                
+                addMarker(truck.pos.getLat(), truck.pos.getLng(), info.PlateNumber, info.Direction, getMarkerIcon(info.Alarm, null, 0, info.Speed));
 
                 // 匹配司机信息
                 html = htmlDirver.replace(/%id%/g, tid).replace("%index%", index).replace("%license%", info.PlateNumber);
@@ -351,7 +364,7 @@ function loadingRealTime() {
                     $(tr).children("td:eq(7)").text(pos.getLng());
                     $(tr).children("td:eq(8)").text(pos.getLat());
                 }
-                addMarker(pos.getLat(), pos.getLng(), $(tr).children("td:eq(2)").text(), item.Direction);
+                addMarker(pos.getLat(), pos.getLng(), $(tr).children("td:eq(2)").text(), item.Direction, getMarkerIcon(item.Alarm, item.ALarm2, item.LossTime, item.Speed));
                 // 更新车辆的状态
                 var seek = $.grep(trucks, function (truck) {
                     return truck.id == "l" + item.Id;
@@ -430,11 +443,7 @@ function getChartData(truck) {
 }
 
 $(document).ready(function () {
-
-    timezoneJS.timezone.zoneFileBasePath = "../js/tz";
-    timezoneJS.timezone.defaultZoneFile = [];
-    timezoneJS.timezone.init({ async: false });
-
+    
     $('#home-tab').tab('show');
     //$('[data-toggle="tooltip"]').tooltip();
     initializeDatepicker();
@@ -505,11 +514,12 @@ $(document).ready(function () {
             $(".modal-title").text("【" + $(this).children("td:eq(1)").text() + "】运作情况一览");
             $(".modal").modal('show');
             //getChartData(seeks[0]);
+            var truck = seeks[0];
             var date = $("#statisticalDate").val();
-            var begin = getTimestamp(date + " 00:00:00");
-            var end = getTimestamp(date + " 23:59:59");
+            var begin = getTimestamp(truck.trace[0].RecvTime);
+            var end = getTimestamp(truck.trace[truck.trace.length - 1].RecvTime);
             var worker = new Worker("../js/traceWorker.js");
-            worker.postMessage({ trace: seeks[0].trace, begin: begin, end: end });
+            worker.postMessage({ trace: truck.trace, begin: begin, end: end });
             worker.onmessage = function (evt) {
                 if (typeof evt.data === "number") {
                     var per = evt.data / 86400 * 100;
@@ -518,24 +528,28 @@ $(document).ready(function () {
                 } else {
                     $('.progress').css("display", "none");
                     $("#badge").addClass("hide");
-                    var options = {
-                        xaxis: {
-                            alignTicksWithAxis: 1,
-                            tickFormatter: function (value, axis) {
-                                return getTimestamp(value * 1000).substr(11, 5);
+                    $("#placeholder").CanvasJSChart({
+                        theme: "light2", // "light1", "light2", "dark1", "dark2"
+                        animationEnabled: true,
+                        zoomEnabled: true,
+                        data: [{
+                            type: "area",
+                            dataPoints: evt.data
+                        }],
+                        toolTip: {
+                            enabled: true,       //disable here
+                            animationEnabled: true, //disable here
+                            contentFormatter: function (e) {
+                                var point = e.entries[0].dataPoint;
+                                return getTimestamp(point.x * 1000).substr(11) + " " + (point.y <= 0 ? "停车" : ("<strong>" + point.y + "km/h</strong>"));
                             }
                         },
-                        yaxes: {
-                            show: false,
-                            min: 0
+                        axisX: {
+                            labelFormatter: function (e) {
+                                return getTimestamp(e.value * 1000).substr(11, 5);
+                            }
                         },
-                        legend: { position: "sw" },
-                        series: {
-                            lines: { show: true }
-                        }
-                    };
-                    var data = [{ data: evt.data}];
-                    $.plot("#placeholder", data, options);
+                    });
                 }
             };
         } else {
