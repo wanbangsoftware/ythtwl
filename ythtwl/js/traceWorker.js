@@ -20,27 +20,32 @@ var getTrace = function (time, traces) {
     return trace;
 }
 
+var begin, end, trace;
 onmessage = function (evt) {
     var data = evt.data;
-    var begin = data.begin, end = data.end;
-    var trace = data.trace;
-    var arr = [];
-    var timestamp, timestampNext;
-    for (var i = begin; i <= end; i++) {
-        arr.push({ x: i, y: 0.0 });
-    }
-    for (var i = 0; i < trace.length; i++) {
-        timestamp = getTimestamp(trace[i].RecvTime);
-        if (i + 1 < trace.length) {
-            timestampNext = getTimestamp(trace[i + 1].RecvTime);
-        } else {
-            timestampNext = timestamp;
+    if (typeof data === "object") {
+        begin = data.begin;
+        end = data.end;
+        trace = data.trace;
+    } else if (typeof data === "number"){
+        var arr = [];
+        var timestamp, timestampNext;
+        for (var i = begin; i <= end; i++) {
+            arr.push({ x: i, y: 0.0 });
         }
-        // 填充车速
-        for (var j = timestamp; j < timestampNext; j++) {
-            arr[j - begin].y = trace[i].Speed / 10;
+        for (var i = 0; i < trace.length; i++) {
+            timestamp = getTimestamp(trace[i].RecvTime);
+            if (i + 1 < trace.length) {
+                timestampNext = getTimestamp(trace[i + 1].RecvTime);
+            } else {
+                timestampNext = timestamp;
+            }
+            // 填充车速
+            for (var j = timestamp; j < timestampNext; j++) {
+                arr[j - begin].y = trace[i].Speed / 10;
+            }
+            postMessage([i + 1, arr.length]);
         }
-        postMessage(i + 1);
+        postMessage(arr);
     }
-    postMessage(arr);
 };

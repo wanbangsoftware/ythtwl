@@ -9,11 +9,11 @@ $(document).ready(function () {
     var top = $("#container").offset().top;
     $("#container").height(height - top - 10);
     _amap_ = new AMap.Map('container', {
-        zoom: 14
+        zoom: 13
         //center: [116.39, 39.9]
     });
 
-    AMap.plugin(['AMap.ToolBar', 'AMap.Scale', 'AMap.OverView', 'AMap.MapType'], function () {
+    AMap.plugin(['AMap.ToolBar', 'AMap.Scale', 'AMap.OverView', 'AMap.MapType', 'AMap.Geolocation'], function () {
 
         _amap_.addControl(new AMap.ToolBar());
 
@@ -24,6 +24,15 @@ $(document).ready(function () {
         //_amap_.addControl(new BasicControl.LayerSwitcher({ position: 'rt' }));
         //地图类型切换  
         _amap_.addControl(new AMap.MapType({ defaultType: 0, showTraffic: false, showRoad: true }));
+
+        geolocation = new AMap.Geolocation({
+            enableHighAccuracy: true,//是否使用高精度定位，默认:true
+            timeout: 10000,          //超过10秒后停止定位，默认：无穷大
+            showButton: false,
+            showMarker: false
+        });
+        _amap_.addControl(geolocation);
+        //geolocation.getCurrentPosition();
     });
 });
 

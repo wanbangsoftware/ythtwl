@@ -498,7 +498,7 @@ $(document).ready(function () {
             getTruckTrace();
         } else {
             showDialog("提示", "没有找到类似『" + license + "』的车辆。");
-            $("table tbody:eq(2)").html("<tr><td colspan=\"8\">没有找到类似『" + license + "』的车辆。</td></tr>");
+            $("table tbody:eq(2)").html("<tr><td colspan=\"9\">没有找到类似『" + license + "』的车辆。</td></tr>");
             $(this).attr("disabled", false);
             $("#exportExcel").attr("disabled", true);
         }
@@ -512,7 +512,6 @@ $(document).ready(function () {
             $('.progress').css("display", "block");
             $("#badge").removeClass("hide");
             $(".modal-title").text("【" + $(this).children("td:eq(1)").text() + "】运作情况一览");
-            $(".modal").modal('show');
             //getChartData(seeks[0]);
             var truck = seeks[0];
             var date = $("#statisticalDate").val();
@@ -521,8 +520,8 @@ $(document).ready(function () {
             var worker = new Worker("../js/traceWorker.js");
             worker.postMessage({ trace: truck.trace, begin: begin, end: end });
             worker.onmessage = function (evt) {
-                if (typeof evt.data === "number") {
-                    var per = evt.data / 86400 * 100;
+                if (evt.data.length < 3) {
+                    var per = evt.data[0] / evt.data[1] * 100;
                     $('.progress-bar').html(parseInt(per) + "%").css('width', parseInt(per) + '%').attr('aria-valuenow', per);
                     $(".badge").text(parseInt(per) + "%");
                 } else {
@@ -536,6 +535,7 @@ $(document).ready(function () {
                             type: "area",
                             dataPoints: evt.data
                         }],
+                        width: 870,
                         toolTip: {
                             enabled: true,       //disable here
                             animationEnabled: true, //disable here
@@ -552,6 +552,9 @@ $(document).ready(function () {
                     });
                 }
             };
+            $(".modal").on('shown.bs.modal', function (e) {
+                worker.postMessage(1);
+            }).modal('show');
         } else {
 
         }
