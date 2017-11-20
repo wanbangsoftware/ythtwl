@@ -6,7 +6,8 @@ function sendNimMessage(license, latitude, longitude, begin, times, driver) {
     var sum = sha1(security + nonce + currTime);
 
     var fdata = {
-        'fromAccid': 'service', "toAccids": '["development", "boss_user"]',// "to": "development",
+		// 'from': 'service', "msgtype": "0", "to": "development",
+        'fromAccid': 'service', "toAccids": '["development", "boss_user", "admin1", "admin2"]',
         'attach': '{"id":' + currTime + ',"license":"' + license + '","latitude":' + latitude + ',"longitude":' + longitude + ',"begin":"' + begin +
         '","times":' + times + ',"status":1,"name1":"' + (null == driver ? "ÕıÀ∫¥–" : driver.name1) +
         '","phone1":"' + (null == driver ? "13999999999" : driver.phone1) + '","name2":"' + (null == driver ? "ÕıΩ°¡÷" : driver.name2) +
