@@ -87,6 +87,22 @@
                                 <input type="text" class="form-control" id="statisticalDate" placeholder="日期" aria-describedby="basic-addon1">
                             </div>
                         </td>
+                        <td class="table_header" style="border-left: 0px; border-right: 0px; padding-left: 10px;">
+                            <div class="btn-group">
+                                <button type="button" class="btn btn-default" id="classTypeName">早晚班</button>
+                                <input type="hidden" id="classTypeValue" value="moning" />
+                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                </button>
+                                <ul class="dropdown-menu">
+                                    <li><a href="#" id="classTypeMoning">早班(06:30至18:30)</a></li>
+                                    <li><a href="#" id="classTypeEvening">晚班(18:30至06:30 +1天)</a></li>
+                                    <li role="separator" class="divider"></li>
+                                    <li><a href="#">选择早晚班次查询</a></li>
+                                </ul>
+                            </div>
+                        </td>
                         <td class="table_header" style="border-left: 0px; border-right: 0px; width: 200px; padding-left: 10px;">
                             <div class="input-group">
                                 <span class="input-group-addon" id="basic-addon1">车牌号：</span>

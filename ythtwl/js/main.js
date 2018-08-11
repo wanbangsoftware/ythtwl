@@ -171,9 +171,17 @@ function getTruckTrace() {
         var data = {};
         var truck = seekTrucks[seekIndex];
         var date = $("#statisticalDate").val();
+        var clazz = $("#classTypeValue").val();
         data.VehicleId = truck.id.replace("l", "");
-        data.STime = date + " 00:00:00";
-        data.ETime = date + " 23:59:59";
+        if (clazz.indexOf("moning") >= 0) {
+            data.STime = date + " 06:30:00";
+            data.ETime = date + " 18:30:00";
+        } else {
+            data.STime = date + " 18:30:00";
+            var d = new Date(date.replace(/-/g, "/"));
+            d = d.dateAfter(1, 1);
+            data.ETime = d.pattern("yyyy-MM-dd") + " 06:30:00";
+        }
         data.PlateNumber = truck.attributes.PlateNumber;
         syncLoading("post", "http://www.zfbeidou.com/bds/historytrace/getTraceData/", data, function (data) {
             if (null == data || data.length < 1) {
@@ -456,6 +464,18 @@ $(document).ready(function () {
         saveSetting("setting", JSON.stringify(setting));
         //$("#settingSave").attr("disabled", true);
         showDialog("提示", "数据已保存，这些设置将会在下一分钟之后开始生效。");
+    });
+
+    // 早班班选择
+    $("a[id^='classType']").click(function () {
+        var id = $(this).prop("id");
+        if (id.indexOf("Moning") >= 0) {
+            $("#classTypeName").text("早班");
+            $("#classTypeValue").val("moning");
+        } else if (id.indexOf("Evening") >= 0) {
+            $("#classTypeName").text("晚班");
+            $("#classTypeValue").val("evening");
+        }
     });
 
     $("#exportExcel").click(function () {
