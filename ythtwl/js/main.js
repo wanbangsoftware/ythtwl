@@ -267,7 +267,7 @@ function getTruckTrace() {
                 }
                 // 重新按照服务器接收时间排序
                 data = jLinq.from(data).sort("Time").select();
-                truck.trace = data;
+                //truck.trace = data;
                 truck.polyline = [];
                 // 当天第一次启动时的位置，以此来判断当天干活来回了几趟
                 var bPos = null;
@@ -638,7 +638,7 @@ function showTrucnStopPoints(truck) {
     var tbody = $("#truckStopPointList");
     tbody.html("");
     // 显示轨迹
-    if (truck.trace.length > 0) {
+    if (truck.polyline.length > 0) {
         showTruckTrack(truck.polyline);
         fitTruckMapView();
     }
