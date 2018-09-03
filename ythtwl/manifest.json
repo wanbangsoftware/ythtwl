@@ -15,6 +15,6 @@
   "background": {
     "scripts": [ "js/tab.creator.js" ]
   },
-  "content_security_policy": "script-src 'self' 'unsafe-eval' https://*.amap.com/; object-src 'self'",
-  "permissions": [ "cookies", "tabs", "alarms", "http://*/*", "https://*/*" ]
+  "content_security_policy": "script-src 'self' https://*.amap.com/ 'unsafe-eval'; object-src 'self'",
+  "permissions": [ "cookies", "tabs", "alarms", "http://*/*", "https://*/*", "downloads" ]
 }

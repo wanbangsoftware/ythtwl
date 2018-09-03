@@ -1,13 +1,14 @@
 // JavaScript source code
 //importScripts("jquery-3.2.1.js");
 
-var getTimestamp = function (time) {
+function getTimestamp(time) {
     if (typeof time === "string") {
         return new Date(Date.parse(time.replace(/-/g, "/"))).getTime() / 1000;
     } else {
-        return (new Date(time).toLocaleString('chinese', { hour12: false }).replace(/年|月/g, "-").replace(/日/g, " ").replace(/[\/]/g, "-"));
+        return (new Date(time).pattern("yyyy-MM-dd HH:mm:ss"));
+        //.toLocaleString('chinese', { hour12: false }).replace(/年|月/g, "-").replace(/日/g, " ").replace(/[\/]/g, "-"));//.pattern("yyyy-MM-dd hh:mm:ss");
     }
-};
+}
 
 var getTrace = function (time, traces) {
     var trace = null;

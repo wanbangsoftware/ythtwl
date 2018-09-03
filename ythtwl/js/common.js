@@ -18,7 +18,7 @@ function showDialog(title, text, clicked) {
             }
         }],
         onhidden: function (dialogItself) {
-            if ("undefined" != typeof (clicked)) {
+            if ("function" === typeof (clicked)) {
                 clicked();
             }
         }
@@ -27,26 +27,27 @@ function showDialog(title, text, clicked) {
 /*
     显示提示信息并显示确认按钮
 */
-function confirmDialog(title, text, confirmed, canceled) {
+function confirmDialog(title, text, confirmText, cancelText, confirmed, canceled) {
     BootstrapDialog.show({
         title: title,
         message: text,
         buttons: [{
-            icon: "glyphicon glyphicon-ok-circle",
-            label: "OK",
-            cssClass: "btn-warning",
+            //icon: "glyphicon glyphicon-ok",
+            label: confirmText,
+            cssClass: "btn-primary",
             action: function (dialogItself) {
                 // 点击了确定按钮之后发起远程处理方法并关闭本窗口
                 dialogItself.close();
-                if ("undefined" != typeof (confirmed)) {
+                if ("function" === typeof (confirmed)) {
                     confirmed();
                 }
             }
         }, {
-            label: "Cancel", icon: "glyphicon glyphicon-ban-circle",
+            label: cancelText,
+            //icon: "glyphicon glyphicon-remove",
             action: function (dialogItself) {
                 dialogItself.close();
-                if ("undefined" != typeof (canceled)) {
+                if ("function" === typeof (canceled)) {
                     canceled();
                 }
             }
